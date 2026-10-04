@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Create a clean invoice in your browser and save it as PDF. Nothing leaves your device.">
+  <title>Invoice Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip-link" href="#preview">Skip to invoice preview</a>
+
+  <header class="app-header no-print">
+    <h1>Invoice Generator</h1>
+    <div class="toolbar" role="toolbar" aria-label="Invoice actions">
+      <button type="button" class="btn btn-primary" id="print-btn">Print / Save as PDF</button>
+      <button type="button" class="btn" id="export-btn">Export JSON</button>
+      <label class="btn" for="import-input">Import JSON</label>
+      <input type="file" id="import-input" accept="application/json,.json" class="visually-hidden">
+      <button type="button" class="btn" id="sample-btn">Load sample</button>
+      <button type="button" class="btn btn-danger" id="new-btn">New invoice</button>
+    </div>
+  </header>
+
+  <p id="status" class="status no-print" role="status" aria-live="polite"></p>
+
+  <main class="layout">
+    <form id="editor" class="editor no-print" aria-label="Invoice editor" novalidate>
+      <fieldset>
+        <legend>Invoice</legend>
+        <div class="grid-2">
+          <label>Invoice number
+            <input type="text" id="number" autocomplete="off">
+          </label>
+          <label>Currency
+            <select id="currency">
+              <option value="USD">USD – US dollar</option>
+              <option value="GBP">GBP – Pound sterling</option>
+              <option value="EUR">EUR – Euro</option>
+              <option value="PKR">PKR – Pakistani rupee</option>
+              <option value="INR">INR – Indian rupee</option>
+              <option value="AED">AED – UAE dirham</option>
+              <option value="AUD">AUD – Australian dollar</option>
+              <option value="CAD">CAD – Canadian dollar</option>
+            </select>
+          </label>
+          <label>Issue date
+            <input type="date" id="issueDate">
+          </label>
+          <label>Due date
+            <input type="date" id="dueDate">
+          </label>
+        </div>
+        <div class="quick-terms" role="group" aria-label="Set due date from issue date">
+          <span>Due in:</span>
+          <button type="button" class="chip" data-net="7">Net 7</button>
+          <button type="button" class="chip" data-net="14">Net 14</button>
+          <button type="button" class="chip" data-net="30">Net 30</button>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>Logo</legend>
+        <div class="logo-row">
+          <input type="file" id="logo-input" accept="image/*" aria-describedby="logo-help">
+          <button type="button" class="btn btn-small" id="logo-remove" hidden>Remove logo</button>
+        </div>
+        <p id="logo-help" class="help">PNG, JPG or SVG. Logos under 200 KB are remembered on this device.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>From</legend>
+        <label>Name / business<input type="text" id="from-name" autocomplete="organization"></label>
+        <label>Email<input type="email" id="from-email" autocomplete="email"></label>
+        <label>Address<textarea id="from-address" rows="3"></textarea></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Bill to</legend>
+        <label>Name / business<input type="text" id="to-name" autocomplete="off"></label>
+        <label>Email<input type="email" id="to-email" autocomplete="off"></label>
+        <label>Address<textarea id="to-address" rows="3"></textarea></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>Line items</legend>
+        <ol id="items" class="items"></ol>
+        <button type="button" class="btn" id="add-item">+ Add line</button>
+      </fieldset>
+
+      <fieldset>
+        <legend>Adjustments</legend>
+        <div class="grid-2">
+          <label>Discount
+            <span class="input-pair">
+              <input type="number" id="discount-value" min="0" step="0.01" inputmode="decimal">
+              <select id="discount-type" aria-label="Discount type">
+                <option value="percent">%</option>
+                <option value="fixed">Fixed</option>
+              </select>
+            </span>
+          </label>
+          <label>Shipping
+            <input type="number" id="shipping" min="0" step="0.01" inputmode="decimal">
+          </label>
+        </div>
+        <p class="help">Discount is applied before tax. Shipping is not taxed.</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>Notes</legend>
+        <label>Notes / payment terms<textarea id="notes" rows="3"></textarea></label>
+        <label>Bank details<textarea id="bank" rows="3"></textarea></label>
+      </fieldset>
+    </form>
+
+    <section id="preview" class="preview-wrap" aria-label="Invoice preview" tabindex="-1">
+      <article class="invoice" id="invoice">
+        <header class="inv-head">
+          <div>
+            <img id="p-logo" class="inv-logo" alt="" hidden>
+            <p class="inv-from-name" id="p-from-name"></p>
+            <p class="inv-muted pre" id="p-from-address"></p>
+            <p class="inv-muted" id="p-from-email"></p>
+          </div>
+          <div class="inv-title">
+            <h2>Invoice</h2>
+            <dl class="inv-meta">
+              <dt>Invoice no.</dt><dd id="p-number"></dd>
+              <dt>Issued</dt><dd id="p-issue"></dd>
+              <dt>Due</dt><dd id="p-due"></dd>
+            </dl>
+          </div>
+        </header>
+
+        <section class="inv-billto">
+          <h3>Bill to</h3>
+          <p class="inv-strong" id="p-to-name"></p>
+          <p class="inv-muted pre" id="p-to-address"></p>
+          <p class="inv-muted" id="p-to-email"></p>
+        </section>
+
+        <table class="inv-table">
+          <thead>
+            <tr>
+              <th scope="col">Description</th>
+              <th scope="col" class="num">Qty</th>
+              <th scope="col" class="num">Unit price</th>
+              <th scope="col" class="num">Tax</th>
+              <th scope="col" class="num">Amount</th>
+            </tr>
+          </thead>
+          <tbody id="p-items"></tbody>
+        </table>
+
+        <dl class="inv-totals" id="p-totals"></dl>
+
+        <footer class="inv-foot">
+          <section id="p-notes-wrap"><h3>Notes</h3><p class="pre" id="p-notes"></p></section>
+          <section id="p-bank-wrap"><h3>Payment details</h3><p class="pre" id="p-bank"></p></section>
+        </footer>
+      </article>
+    </section>
+  </main>
+
+  <footer class="site-footer no-print">
+    Built by Socialist Fox · <a href="https://github.com/ansab-imam/invoice-generator">Source on GitHub</a>
+  </footer>
+
+  <template id="item-template">
+    <li class="item">
+      <label class="item-desc">Description<input type="text" data-field="description"></label>
+      <label>Qty<input type="number" data-field="quantity" min="0" step="any" inputmode="decimal"></label>
+      <label>Unit price<input type="number" data-field="unitPrice" min="0" step="0.01" inputmode="decimal"></label>
+      <label>Tax %<input type="number" data-field="taxRate" min="0" max="100" step="0.01" inputmode="decimal"></label>
+      <div class="item-actions">
+        <button type="button" class="icon-btn" data-action="up" aria-label="Move line up">↑</button>
+        <button type="button" class="icon-btn" data-action="down" aria-label="Move line down">↓</button>
+        <button type="button" class="icon-btn danger" data-action="remove" aria-label="Remove line">×</button>
+      </div>
+    </li>
+  </template>
+
+  <script src="invoice-math.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

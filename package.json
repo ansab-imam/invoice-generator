@@ -1,0 +1,20 @@
+{
+  "name": "invoice-generator",
+  "version": "1.0.0",
+  "description": "Create clean invoices in the browser and save them as PDF. No build step, no server, no tracking.",
+  "main": "invoice-math.js",
+  "scripts": {
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": ["invoice", "pdf", "freelancer", "billing", "vanilla-js"],
+  "author": "Ansab Imam (https://github.com/ansab-imam)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ansab-imam/invoice-generator.git"
+  },
+  "homepage": "https://github.com/ansab-imam/invoice-generator",
+  "engines": {
+    "node": ">=21"
+  }
+}
